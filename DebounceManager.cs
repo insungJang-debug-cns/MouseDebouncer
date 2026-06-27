@@ -50,18 +50,35 @@ public class DebounceManager
 
         if (_lastInputTime.TryGetValue(button, out DateTime lastTime))
         {
-            if ((now - lastTime).TotalMilliseconds < delayMs)
+            double elapsed = (now - lastTime).TotalMilliseconds;
+            if (elapsed < delayMs)
             {
+                Logger.Write($"{ButtonName(button)} | 차단  | 경과: {elapsed,6:F0}ms | 딜레이: {delayMs}ms");
                 ResetIfNewDay();
                 _blockedCount++;
                 BlockCountChanged?.Invoke(this, EventArgs.Empty);
                 return true;
             }
+            Logger.Write($"{ButtonName(button)} | 통과  | 경과: {elapsed,6:F0}ms | 딜레이: {delayMs}ms");
+        }
+        else
+        {
+            Logger.Write($"{ButtonName(button)} | 통과  | 경과: 첫 입력");
         }
 
         _lastInputTime[button] = now;
         return false;
     }
+
+    private static string ButtonName(MouseButton button) => button switch
+    {
+        MouseButton.Left     => "왼쪽 버튼",
+        MouseButton.Right    => "오른쪽 버튼",
+        MouseButton.Middle   => "휠 클릭",
+        MouseButton.XButton1 => "사이드 버튼 1",
+        MouseButton.XButton2 => "사이드 버튼 2",
+        _                    => button.ToString()
+    };
 
     private int GetDelay(MouseButton button) => button switch
     {

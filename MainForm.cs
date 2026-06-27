@@ -29,6 +29,7 @@ public class MainForm : Form
     private NotifyIcon        _trayIcon    = null!;
     private ToolStripMenuItem _menuToggle  = null!;
     private ToolStripMenuItem _menuBlocked = null!;
+    private ToolStripMenuItem _menuLog     = null!;
 
     // Application.Run이 내부적으로 Show()를 호출하므로 최초 1회만 억제
     private bool _suppressFirstShow = true;
@@ -162,6 +163,7 @@ public class MainForm : Form
     {
         _menuToggle  = new ToolStripMenuItem("비활성화", null, OnToggle);
         _menuBlocked = new ToolStripMenuItem("오늘 방지횟수: 0") { Enabled = false };
+        _menuLog     = new ToolStripMenuItem("로그 기록 시작", null, OnToggleLog);
 
         var menu = new ContextMenuStrip();
         menu.Opening += OnTrayMenuOpening;
@@ -169,6 +171,9 @@ public class MainForm : Form
         menu.Items.Add(_menuToggle);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_menuBlocked);
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(_menuLog);
+        menu.Items.Add(new ToolStripMenuItem("로그 파일 열기", null, OnOpenLog));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("종료", null, OnExit));
 
@@ -220,6 +225,24 @@ public class MainForm : Form
         _trayIcon.Text = _mouseHook.IsEnabled
             ? "더블클릭 방지"
             : "더블클릭 방지 (비활성)";
+    }
+
+    private void OnToggleLog(object? sender, EventArgs e)
+    {
+        Logger.IsEnabled = !Logger.IsEnabled;
+        _menuLog.Text = Logger.IsEnabled ? "로그 기록 중지" : "로그 기록 시작";
+        if (Logger.IsEnabled) Logger.Clear();
+    }
+
+    private void OnOpenLog(object? sender, EventArgs e)
+    {
+        if (!File.Exists(Logger.LogFilePath))
+        {
+            MessageBox.Show("로그 파일이 없습니다.\n먼저 로그 기록을 시작하세요.", "더블클릭 방지",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        System.Diagnostics.Process.Start("notepad.exe", Logger.LogFilePath);
     }
 
     private void OnExit(object? sender, EventArgs e)
