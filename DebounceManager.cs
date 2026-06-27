@@ -6,6 +6,7 @@ namespace MouseDebouncer;
 public class DebounceManager
 {
     private readonly Dictionary<MouseButton, DateTime> _lastInputTime = new();
+    private readonly HashSet<MouseButton> _pendingBlockUp = new();
     private AppConfig _config;
 
     // 오늘 날짜가 바뀌면 카운트를 리셋한다
@@ -54,6 +55,7 @@ public class DebounceManager
             if (elapsed < delayMs)
             {
                 Logger.Write($"{ButtonName(button)} | 차단  | 경과: {elapsed,6:F0}ms | 딜레이: {delayMs}ms");
+                _pendingBlockUp.Add(button);
                 ResetIfNewDay();
                 _blockedCount++;
                 BlockCountChanged?.Invoke(this, EventArgs.Empty);
@@ -66,9 +68,13 @@ public class DebounceManager
             Logger.Write($"{ButtonName(button)} | 통과  | 경과: 첫 입력");
         }
 
+        _pendingBlockUp.Remove(button);
         _lastInputTime[button] = now;
         return false;
     }
+
+    /// DOWN이 차단된 버튼의 UP도 차단한다.
+    public bool ShouldBlockUp(MouseButton button) => _pendingBlockUp.Remove(button);
 
     private static string ButtonName(MouseButton button) => button switch
     {

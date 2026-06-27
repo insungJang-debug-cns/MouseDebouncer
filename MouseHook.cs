@@ -11,11 +11,15 @@ public sealed class MouseHook : IDisposable
 {
     #region Win32 API
 
-    private const int WH_MOUSE_LL   = 14;
+    private const int WH_MOUSE_LL    = 14;
     private const int WM_LBUTTONDOWN = 0x0201;
+    private const int WM_LBUTTONUP   = 0x0202;
     private const int WM_RBUTTONDOWN = 0x0204;
+    private const int WM_RBUTTONUP   = 0x0205;
     private const int WM_MBUTTONDOWN = 0x0207;
+    private const int WM_MBUTTONUP   = 0x0208;
     private const int WM_XBUTTONDOWN = 0x020B;
+    private const int WM_XBUTTONUP   = 0x020C;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MSLLHOOKSTRUCT
@@ -95,18 +99,22 @@ public sealed class MouseHook : IDisposable
     {
         if (nCode >= 0)
         {
-            MouseButton? button = ResolveButton(wParam, lParam);
-            if (button.HasValue)
+            MouseButton? down = ResolveButtonDown(wParam, lParam);
+            if (down.HasValue)
             {
-                ButtonDetected?.Invoke(this, button.Value);
-                if (IsEnabled && _debounceManager.ShouldBlock(button.Value))
-                    return (IntPtr)1; // 0이 아닌 값 → 이벤트 전달 차단
+                ButtonDetected?.Invoke(this, down.Value);
+                if (IsEnabled && _debounceManager.ShouldBlock(down.Value))
+                    return (IntPtr)1;
             }
+
+            MouseButton? up = ResolveButtonUp(wParam, lParam);
+            if (up.HasValue && IsEnabled && _debounceManager.ShouldBlockUp(up.Value))
+                return (IntPtr)1;
         }
         return CallNextHookEx(_hookHandle, nCode, wParam, lParam);
     }
 
-    private static MouseButton? ResolveButton(IntPtr wParam, IntPtr lParam)
+    private static MouseButton? ResolveButtonDown(IntPtr wParam, IntPtr lParam)
     {
         return wParam.ToInt32() switch
         {
@@ -115,6 +123,18 @@ public sealed class MouseHook : IDisposable
             WM_MBUTTONDOWN => MouseButton.Middle,
             WM_XBUTTONDOWN => ResolveXButton(lParam),
             _              => null
+        };
+    }
+
+    private static MouseButton? ResolveButtonUp(IntPtr wParam, IntPtr lParam)
+    {
+        return wParam.ToInt32() switch
+        {
+            WM_LBUTTONUP => MouseButton.Left,
+            WM_RBUTTONUP => MouseButton.Right,
+            WM_MBUTTONUP => MouseButton.Middle,
+            WM_XBUTTONUP => ResolveXButton(lParam),
+            _            => null
         };
     }
 
