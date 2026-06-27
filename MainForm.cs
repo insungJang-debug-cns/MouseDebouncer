@@ -55,8 +55,8 @@ public class MainForm : Form
 
     private void BuildUI()
     {
-        Text            = "Mouse Debouncer";
-        ClientSize      = new Size(310, 270);
+        Text            = "더블클릭 방지";
+        ClientSize      = new Size(310, 295);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox     = false;
         ShowInTaskbar   = false;
@@ -66,12 +66,12 @@ public class MainForm : Form
         {
             Dock        = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount    = 8,
+            RowCount    = 9,
             Padding     = new Padding(10),
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 9; i++)
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         _nudXButton1 = CreateNud(_config.XButton1);
@@ -91,11 +91,22 @@ public class MainForm : Form
             row++;
         }
 
-        AddRow("XButton1 Delay (ms):", _nudXButton1);
-        AddRow("XButton2 Delay (ms):", _nudXButton2);
-        AddRow("Left Delay (ms):",     _nudLeft);
-        AddRow("Right Delay (ms):",    _nudRight);
-        AddRow("Middle Delay (ms):",   _nudMiddle);
+        AddRow("사이드 버튼 1 딜레이 (ms):", _nudXButton1);
+        AddRow("사이드 버튼 2 딜레이 (ms):", _nudXButton2);
+        AddRow("왼쪽 버튼 딜레이 (ms):",    _nudLeft);
+        AddRow("오른쪽 버튼 딜레이 (ms):",   _nudRight);
+        AddRow("휠 클릭 딜레이 (ms):",      _nudMiddle);
+
+        var lblHint = new Label
+        {
+            Text      = "※ 단위: ms  (1000 = 1초)",
+            ForeColor = SystemColors.GrayText,
+            Anchor    = AnchorStyles.Left | AnchorStyles.Right,
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        layout.Controls.Add(lblHint, 0, row);
+        layout.SetColumnSpan(lblHint, 2);
+        row++;
 
         _chkStartup = new CheckBox
         {
@@ -122,13 +133,13 @@ public class MainForm : Form
 
         _lblBlocked = new Label
         {
-            Text      = "Blocked: 0",
+            Text      = "더블클릭 방지횟수: 0",
             Anchor    = AnchorStyles.Left | AnchorStyles.Right,
             TextAlign = ContentAlignment.MiddleLeft,
         };
         layout.Controls.Add(_lblBlocked, 0, row);
 
-        var btnSave = new Button { Text = "Save", Dock = DockStyle.Fill };
+        var btnSave = new Button { Text = "저장", Dock = DockStyle.Fill };
         btnSave.Click += OnSave;
         layout.Controls.Add(btnSave, 1, row);
 
@@ -149,24 +160,24 @@ public class MainForm : Form
 
     private void BuildTray()
     {
-        _menuToggle  = new ToolStripMenuItem("Disable", null, OnToggle);
-        _menuBlocked = new ToolStripMenuItem("Blocked today: 0") { Enabled = false };
+        _menuToggle  = new ToolStripMenuItem("비활성화", null, OnToggle);
+        _menuBlocked = new ToolStripMenuItem("오늘 방지횟수: 0") { Enabled = false };
 
         var menu = new ContextMenuStrip();
         menu.Opening += OnTrayMenuOpening;
-        menu.Items.Add(new ToolStripMenuItem("Open Settings", null, (_, _) => OpenSettings()));
+        menu.Items.Add(new ToolStripMenuItem("설정 열기", null, (_, _) => OpenSettings()));
         menu.Items.Add(_menuToggle);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_menuBlocked);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("Exit", null, OnExit));
+        menu.Items.Add(new ToolStripMenuItem("종료", null, OnExit));
 
         _trayIcon = new NotifyIcon
         {
             Icon             = SystemIcons.Shield,
             ContextMenuStrip = menu,
             Visible          = true,
-            Text             = "Mouse Debouncer",
+            Text             = "더블클릭 방지",
         };
         _trayIcon.DoubleClick += (_, _) => OpenSettings();
     }
@@ -177,8 +188,8 @@ public class MainForm : Form
 
     private void OnTrayMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        _menuBlocked.Text = $"Blocked today: {_debounceManager.BlockedCount}";
-        _menuToggle.Text  = _mouseHook.IsEnabled ? "Disable" : "Enable";
+        _menuBlocked.Text = $"오늘 방지횟수: {_debounceManager.BlockedCount}";
+        _menuToggle.Text  = _mouseHook.IsEnabled ? "비활성화" : "활성화";
     }
 
     private void OpenSettings()
@@ -186,7 +197,7 @@ public class MainForm : Form
         Show();
         WindowState = FormWindowState.Normal;
         Activate();
-        _lblBlocked.Text = $"Blocked: {_debounceManager.BlockedCount}";
+        _lblBlocked.Text = $"더블클릭 방지횟수: {_debounceManager.BlockedCount}";
     }
 
     private void OnSave(object? sender, EventArgs e)
@@ -207,8 +218,8 @@ public class MainForm : Form
         _mouseHook.IsEnabled = !_mouseHook.IsEnabled;
         _trayIcon.Icon = _mouseHook.IsEnabled ? SystemIcons.Shield : SystemIcons.Warning;
         _trayIcon.Text = _mouseHook.IsEnabled
-            ? "Mouse Debouncer"
-            : "Mouse Debouncer (Disabled)";
+            ? "더블클릭 방지"
+            : "더블클릭 방지 (비활성)";
     }
 
     private void OnExit(object? sender, EventArgs e)
@@ -220,7 +231,7 @@ public class MainForm : Form
     private void OnBlockCountChanged(object? sender, EventArgs e)
     {
         if (Visible && IsHandleCreated)
-            _lblBlocked.Text = $"Blocked: {_debounceManager.BlockedCount}";
+            _lblBlocked.Text = $"더블클릭 방지횟수: {_debounceManager.BlockedCount}";
     }
 
     private void OnButtonDetected(object? sender, MouseButton button)
@@ -228,11 +239,11 @@ public class MainForm : Form
         if (!Visible || !IsHandleCreated) return;
         _lblLastButton.Text = button switch
         {
-            MouseButton.Left     => "Left (왼쪽)",
-            MouseButton.Right    => "Right (오른쪽)",
-            MouseButton.Middle   => "Middle (휠 클릭)",
-            MouseButton.XButton1 => "XButton1 (사이드 버튼 1)",
-            MouseButton.XButton2 => "XButton2 (사이드 버튼 2)",
+            MouseButton.Left     => "왼쪽 버튼",
+            MouseButton.Right    => "오른쪽 버튼",
+            MouseButton.Middle   => "휠 클릭",
+            MouseButton.XButton1 => "사이드 버튼 1",
+            MouseButton.XButton2 => "사이드 버튼 2",
             _                    => button.ToString()
         };
     }

@@ -11,8 +11,8 @@ static class Program
         if (!isNewInstance)
         {
             MessageBox.Show(
-                "Mouse Debouncer is already running.",
-                "Mouse Debouncer",
+                "더블클릭 방지가 이미 실행 중입니다.",
+                "더블클릭 방지",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             return;
