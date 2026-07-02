@@ -24,6 +24,8 @@ public static class ConfigManager
 
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
+    public static bool ConfigExists => File.Exists(ConfigPath);
+
     public static AppConfig Load()
     {
         if (!File.Exists(ConfigPath))
