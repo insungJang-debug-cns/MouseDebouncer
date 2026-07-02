@@ -32,10 +32,12 @@ public class MainForm : Form
     private ToolStripMenuItem _menuLog     = null!;
 
     // Application.Run이 내부적으로 Show()를 호출하므로 최초 1회만 억제
-    private bool _suppressFirstShow = true;
+    // 단, 설정 파일이 없는 최초 실행 시에는 화면을 띄워준다.
+    private bool _suppressFirstShow;
 
     public MainForm()
     {
+        _suppressFirstShow = ConfigManager.ConfigExists;
         _config          = ConfigManager.Load();
         _debounceManager = new DebounceManager(_config);
         _mouseHook       = new MouseHook(_debounceManager);
